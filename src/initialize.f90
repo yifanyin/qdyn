@@ -112,7 +112,7 @@ subroutine init_all(pb)
   elseif (SOLVER_TYPE == 3) then
     call init_rk45_2(pb)
   elseif (SOLVER_TYPE == 4) Then
-      call init_lsoda(pb)
+    call init_lsoda(pb)
   endif
 
   if (is_mpi_master()) write(6,*) 'Initialization completed'

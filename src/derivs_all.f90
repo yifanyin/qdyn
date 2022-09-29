@@ -183,7 +183,6 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   ! Yifan: Basically a copy of the derivs subroutine to accomodate lsoda iteration
   ! The DLSODA is called one element by one element,
   use problem_class
-  use fault_stress, only : compute_stress
   use friction, only : dtheta_dt_lsoda, dmu_dv_dtheta_lsoda
   
   type(problem_type), intent(inout) :: pb
@@ -199,24 +198,6 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   ! theta = yt(1::pb%neqs)
   ! dv/dt = dydt(2::pb%neqs)
   ! dtheta/dt = dydt(1::pb%neqs)
-  
-  ! compute shear stress rate from elastic interactions, for 0D, 1D & 2D
-  ! call compute_stress(pb%dtau_dt,dydt(3::pb%neqs),pb%kernel,yt(2::pb%neqs)-pb%v_star)
-  
-  ! compute_stress(kernel, v)
-  !     return (tau, sigma)
-  
-  !   if (neq == 3) then
-  ! !    sigma = dydt(3)
-  !     call compute_stress(pb%dtau_dt(pb%lsoda%i), dydt(3), pb%kernel, yt(2)-pb%vpl)
-  !   elseif (neq == 2) Then
-  !     call compute_stress(pb%dtau_dt(pb%lsoda%i), pb%sigma, pb%kernel, yt(2)-pb%vpl)
-  !   endif
-  
-  ! JPA Coulomb
-  ! v = 0d0
-  ! v(pb%rs_nodes) = yt(2::pb%neqs)
-  ! call compute_stress(pb%dtau_dt,pb%kernel,v-pb%v_star)
   
   ! YD we may want to modify this part later to be able to
   ! impose more complicated loading/pertubation
@@ -235,6 +216,6 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   call dmu_dv_dtheta_lsoda(pb%dmu_dv(pb%lsoda%i), pb%dmu_dtheta(pb%lsoda%i), yt, pb)
   dydt(2) = (dtau_per + pb%dtau_dt(pb%lsoda%i) - pb%sigma(pb%lsoda%i)*pb%dmu_dtheta(pb%lsoda%i)*dydt(1)) &
              / (pb%sigma(pb%lsoda%i)*pb%dmu_dv(pb%lsoda%i) + pb%zimpedance)
-  end subroutine f_lsoda
+end subroutine f_lsoda
 
 end module derivs_all

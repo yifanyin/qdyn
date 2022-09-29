@@ -28,10 +28,11 @@ subroutine init_lsoda(pb)
   use friction, only: get_Jac
   use derivs_all
   use fault_stress, only : compute_stress
+  use utils, only : pack
 
   type(problem_type), intent(inout) :: pb
-  double precision, dimension(pb%neqs*pb%mesh%nn) :: yt, dydt
-  integer :: i !ind_stress_coupling, ind_localisation
+  double precision, dimension(pb%neqs*pb%mesh%nn) :: yt !dydt
+!  integer :: i !ind_stress_coupling, ind_localisation
 
   write (FID_SCREEN, *) "Initialising DLSODA solver..."
   !lrn = 20 + 16*pb%neqs*pb%mesh%nn
@@ -45,7 +46,7 @@ subroutine init_lsoda(pb)
   pb%lsoda%liw = 20 + pb%lsoda%neq(1)
 
 ! Lapusta2009's dt
-  pb%lsoda%dt_min = pb%mesh%dx / pb%beta / 3
+!  pb%lsoda%dt_min = pb%mesh%dx / pb%beta / 3
 
 ! Initialize the states to be updated in each run
   allocate(pb%lsoda%rwork(pb%lsoda%lrw))
@@ -59,6 +60,7 @@ subroutine init_lsoda(pb)
   yt(3::pb%neqs) = pb%sigma
   pb%lsoda%t = pb%time
 
+  call pack(yt, pb%theta, pb%v, pb%sigma, pb%theta2, pb%slip, pb)
 !   call compute_stress(pb%dtau_dt, dydt(3::pb%neqs), pb%kernel, yt(2)-pb%vpl)
 !   write (FID_SCREEN, *) "Stress computed"
 !   do i=1, pb%mesh%nn

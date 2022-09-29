@@ -82,7 +82,7 @@ subroutine do_bsstep(pb)
   ! Yifan: used for LSODA
   double precision, dimension(pb%neqs*pb%mesh%nn) :: yt_test
   double precision, dimension(pb%mesh%nn) :: t_test
-  double precision :: t_min, t_min_glob, TOUT, H, dt_ev, dt_ev_glob
+  double precision :: t_min, t_min_glob, TOUT ! H, dt_ev, dt_ev_glob
   integer :: i
 
   neqs = pb%neqs * pb%mesh%nn
@@ -176,9 +176,9 @@ subroutine do_bsstep(pb)
     pb%sigma = yt(3::pb%neqs) + dydt(3::pb%neqs)*pb%dt_did
     !   There's a chance the sigma can be negative close to the surface. First
     !   try to set minus sigma to zero
-    where (pb%sigma < 1000.0)
-      pb%sigma = 1000.0
-    end where
+    ! where (pb%sigma < 1000.0)
+    !   pb%sigma = 1000.0
+    ! end where
     ! Call DLSODA
     ! - First call perform one-step with ITASK = 5 with TCRIT as pb%t_max.
     !   pb%tmax is in pb%lsoda%rwork(1)
@@ -215,9 +215,9 @@ subroutine do_bsstep(pb)
                   pb%lsoda%t(i), TOUT, 1, pb%lsoda%rtol, pb%lsoda%atol, &
                   1, pb%lsoda%istate(i), 0, pb%lsoda%rwork, pb%lsoda%lrw, &
                   pb%lsoda%iwork, pb%lsoda%liw, get_Jac, 2)
-      enddo
-      pb%dt_did = TOUT - pb%t_prev
-      pb%time = TOUT
+    enddo
+    pb%dt_did = TOUT - pb%t_prev
+    pb%time = TOUT
   else
     ! Unknown solver type
     write(FID_SCREEN, *) "Solver type", SOLVER_TYPE, "not recognised"

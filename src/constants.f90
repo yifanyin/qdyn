@@ -50,7 +50,7 @@ integer :: FAULT_TYPE = 1
 ! Which ODE solver to use:
 !   1 : Bulirsch-Stoer
 !   2 : Runge-Kutta-Fehlberg
-integer :: SOLVER_TYPE = 2
+integer :: SOLVER_TYPE = 4
 
 ! Input unit
 integer, parameter :: FID_IN = 15

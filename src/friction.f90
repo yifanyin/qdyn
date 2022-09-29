@@ -203,29 +203,28 @@ subroutine dmu_dv_dtheta_lsoda(dmu_dv, dmu_dtheta, y, pb)
   theta = y(1)
   v = y(2)
   select case (pb%i_rns_law)
-  case(0)
-    dmu_dtheta = pb%b(pb%lsoda%i) / theta
-    dmu_dv = pb%a(pb%lsoda%i) / v
-  case(1)
-    dmu_dtheta = pb%b(pb%lsoda%i)*pb%v2(pb%lsoda%i) / (pb%v2(pb%lsoda%i)*theta + pb%dc(pb%lsoda%i))
-    dmu_dv = pb%a(pb%lsoda%i) * pb%v1(pb%lsoda%i) / v / ( pb%v1(pb%lsoda%i) + v )
-  case(2) ! 2018 SCEC Benchmark
-    z = exp((pb%mu_star(pb%lsoda%i) + pb%b(pb%lsoda%i) * &
-        log(theta/pb%theta_star(pb%lsoda%i))) / &
-        pb%a(pb%lsoda%i)) / (2*pb%v_star(pb%lsoda%i))
-    dmu_dv = pb%a(pb%lsoda%i) / sqrt(1.0/z**2 + v**2)
-    dmu_dtheta = dmu_dv * (pb%b(pb%lsoda%i) * v) / (pb%a(pb%lsoda%i) * theta)
+    case(0)
+      dmu_dtheta = pb%b(pb%lsoda%i) / theta
+      dmu_dv = pb%a(pb%lsoda%i) / v
+    case(1)
+      dmu_dtheta = pb%b(pb%lsoda%i)*pb%v2(pb%lsoda%i) / (pb%v2(pb%lsoda%i)*theta + pb%dc(pb%lsoda%i))
+      dmu_dv = pb%a(pb%lsoda%i) * pb%v1(pb%lsoda%i) / v / ( pb%v1(pb%lsoda%i) + v )
+    case(2) ! 2018 SCEC Benchmark
+      z = exp((pb%mu_star(pb%lsoda%i) + pb%b(pb%lsoda%i) * &
+          log(theta/pb%theta_star(pb%lsoda%i))) / &
+          pb%a(pb%lsoda%i)) / (2*pb%v_star(pb%lsoda%i))
+      dmu_dv = pb%a(pb%lsoda%i) / sqrt(1.0/z**2 + v**2)
+      dmu_dtheta = dmu_dv * (pb%b(pb%lsoda%i) * v) / (pb%a(pb%lsoda%i) * theta)
+    
+  ! new friction law:
+  !  case(xxx)
+  !    implement here the partial derivatives of the friction coefficient
+  !    dmu_dtheta = ...
+  !    dmu_dv = ...
 
-! new friction law:
-!  case(xxx)
-!    implement here the partial derivatives of the friction coefficient
-!    dmu_dtheta = ...
-!    dmu_dv = ...
-
-  case default
-    stop 'dmu_dv_dtheta: unknown friction law type'
+    case default
+      stop 'dmu_dv_dtheta: unknown friction law type'
   end select
-
 end subroutine dmu_dv_dtheta_lsoda
 
 subroutine get_Jac(neq, t, y, nrowpd, pd, pb)
