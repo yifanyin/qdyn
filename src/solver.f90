@@ -64,6 +64,12 @@ subroutine do_bsstep(pb)
   use ode_bs
   use ode_rk45, only: rkf45_d
   use ode_rk45_2, only: rkf45_d2
+  ! Yifan: LSODA
+  use ode_lsoda, only: DLSODA
+  use friction, only: get_Jac
+  use fault_stress, only : compute_stress
+  use my_mpi, only : is_MPI_parallel, min_allproc
+
   use constants, only: FID_SCREEN, SOLVER_TYPE
   use diffusion_solver, only: update_PT_final
 
@@ -73,6 +79,11 @@ subroutine do_bsstep(pb)
   double precision, dimension(pb%neqs*pb%mesh%nn) :: yt_prev
   double precision, dimension(pb%mesh%nn) :: main_var
   integer :: ik, neqs
+  ! Yifan: used for LSODA
+  double precision, dimension(pb%neqs*pb%mesh%nn) :: yt_test
+  double precision, dimension(pb%mesh%nn) :: t_test
+  double precision :: t_min, t_min_glob, TOUT, H, dt_ev, dt_ev_glob
+  integer :: i
 
   neqs = pb%neqs * pb%mesh%nn
 
@@ -147,6 +158,66 @@ subroutine do_bsstep(pb)
     pb%t_prev = pb%time
     ! Call Runge-Kutta solver routine
     call rkf45_d2(derivs, yt, pb%time, pb%dt_max, pb%acc, 0d0, pb)
+  
+  elseif (SOLVER_TYPE == 4) then
+    !  DLSODA
+    pb%t_prev = pb%time
+    pb%lsoda%t = pb%time
+    t_test = pb%lsoda%t
+    yt_test = yt 
+    ! Put compute_stress here to have stress to be calculate as a whole because of
+    ! The kernel is compressed either through FFT or H-matrix and cannot be
+    ! wrapped in F used for LSODA.
+    call compute_stress(pb%dtau_dt, dydt(3::pb%neqs), pb%kernel, yt(2::pb%neqs)-pb%v_pl)
+    ! Because LSODA does not include stress calculation. We need to update
+    ! the stress manually here. Hopefully it's not too off.
+    ! Here the calculation use the old velocity to update dtau_dt and dsigma_dt
+    ! Update sigma
+    pb%sigma = yt(3::pb%neqs) + dydt(3::pb%neqs)*pb%dt_did
+    !   There's a chance the sigma can be negative close to the surface. First
+    !   try to set minus sigma to zero
+    where (pb%sigma < 1000.0)
+      pb%sigma = 1000.0
+    end where
+    ! Call DLSODA
+    ! - First call perform one-step with ITASK = 5 with TCRIT as pb%t_max.
+    !   pb%tmax is in pb%lsoda%rwork(1)
+    ! - Use y_test and pb%lsoda%t to preserve yt and t for the second integration.
+    ! - The one step before TCRIT returns the new time in pb%lsoda%t
+    pb%lsoda%rwork(1) = pb%tmax + 24*3600
+    ! A hard limit of minimum step, IOPT need to be 1.
+    ! pb%lsoda%rwork(7) = 1e-5
+    pb%lsoda%istate = 1
+    do i=1, pb%mesh%nn
+      pb%lsoda%i = i
+      call DLSODA(derivs_lsoda, pb%lsoda%neq, yt_test((i-1)*pb%neqs+1:(i-1)*pb%neqs+2), &
+                  t_test(i), pb%tmax + 24*3600, 1, pb%lsoda%rtol, pb%lsoda%atol, &
+                  5, pb%lsoda%istate(i), 0, pb%lsoda%rwork, pb%lsoda%lrw, &
+                  pb%lsoda%iwork, pb%lsoda%liw, get_Jac, 2)
+      ! write(FID_SCREEN, *) pb%lsoda%istate(i), pb%lsoda%rwork(11)
+    enddo
+    ! if (MY_RANK == 0) write (FID_SCREEN, *) "First LSODA solver call done"
+    ! Next find the smallest new time and calculate again 
+    t_min = minval(t_test)
+    if (is_MPI_parallel()) then
+      call min_allproc(t_min, t_min_glob)
+      TOUT = t_min_glob
+    else
+      TOUT = t_min
+    endif
+    ! write(FID_SCREEN, *) "Timestamp", TOUT
+    ! Second LSODA call to integrate up to TOUT using itask = 1
+    ! Use yt and t
+    pb%lsoda%istate = 1
+    do i=1, pb%mesh%nn
+      pb%lsoda%i = i
+      call DLSODA(derivs_lsoda, pb%lsoda%neq, yt((i-1)*pb%neqs+1:(i-1)*pb%neqs+2), &
+                  pb%lsoda%t(i), TOUT, 1, pb%lsoda%rtol, pb%lsoda%atol, &
+                  1, pb%lsoda%istate(i), 0, pb%lsoda%rwork, pb%lsoda%lrw, &
+                  pb%lsoda%iwork, pb%lsoda%liw, get_Jac, 2)
+      enddo
+      pb%dt_did = TOUT - pb%t_prev
+      pb%time = TOUT
   else
     ! Unknown solver type
     write(FID_SCREEN, *) "Solver type", SOLVER_TYPE, "not recognised"

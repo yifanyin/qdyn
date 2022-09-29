@@ -93,6 +93,18 @@ module problem_class
   end type rk45_2_type
   ! End of features structure
 
+  ! Yifan: LSODA solver parameters
+  ! Solve iteratively
+  type lsoda_type
+    integer :: lrw, liw, neq(2), i
+    double precision :: atol(1), rtol(1), dt_min(1)
+    double precision, dimension(:), allocatable :: rwork, t
+  ! real work array of length at least: 22 + NEQ * MAX(16, NEQ + 9).
+    integer, dimension(:), allocatable :: iwork, istate
+  ! integer work array of length at least  20 + NEQ.
+  end type lsoda_type
+  ! End of features structure
+
   ! Structure for (unit)testing
   type test_type
     logical :: test_mode = .false.
@@ -118,7 +130,8 @@ module problem_class
     double precision, dimension(:), allocatable :: dtheta_dt, dtheta2_dt
     double precision, dimension(:), allocatable :: theta2, alpha
     double precision, pointer ::  tau_max(:) => null(), t_rup(:) => null(), &
-                                  v_max(:) => null(), t_vmax(:) => null()
+                                  v_max(:) => null(), t_vmax(:) => null(), &
+                                  dmu_dtheta(:) => null(), dmu_dv(:) => null()
     double precision, pointer :: pot => null(), pot_rate => null()
    ! Boundary conditions
     integer :: i_sigma_cpl=0, finite=0
@@ -147,7 +160,9 @@ module problem_class
                                   v_glob(:) => null(), theta_glob(:) => null(), &
                                   P_glob(:) => null(), T_glob(:) => null()
     double precision, pointer ::  tau_max_glob(:) => null(), t_rup_glob(:) => null(), &
-                                  v_max_glob(:) => null(), t_vmax_glob(:) => null()
+                                  v_max_glob(:) => null(), t_vmax_glob(:) => null(), &
+                                  dmu_dtheta_glob(:) => null(), dmu_dv_glob(:) => null()
+                                  !     Yifan: The last two are for observing dv/dt
     logical :: allocated_glob = .false.
    ! QSB
     double precision :: DYN_M,DYN_th_on,DYN_th_off
@@ -161,6 +176,7 @@ module problem_class
     type (features_type) :: features
     type (rk45_type) :: rk45
     type (rk45_2_type) :: rk45_2
+    type (lsoda_type) :: lsoda
     type (test_type) :: test
   end type problem_type
 

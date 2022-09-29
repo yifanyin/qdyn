@@ -20,6 +20,7 @@ subroutine init_all(pb)
   use solver, only : init_rk45
   use diffusion_solver, only: init_tp
   use ode_rk45_2, only : init_rk45_2
+  use ode_lsoda, only : init_lsoda
   use output, only: initialize_output
 !!$  use omp_lib
 
@@ -108,9 +109,10 @@ subroutine init_all(pb)
   ! SEISMIC: initialise Runge-Kutta ODE solver, if selected
   if (SOLVER_TYPE == 2) then
     call init_rk45(pb)
-  endif
-  if (SOLVER_TYPE == 3) then
+  elseif (SOLVER_TYPE == 3) then
     call init_rk45_2(pb)
+  elseif (SOLVER_TYPE == 4) Then
+      call init_lsoda(pb)
   endif
 
   if (is_mpi_master()) write(6,*) 'Initialization completed'

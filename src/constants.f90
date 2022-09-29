@@ -45,12 +45,12 @@ double precision, parameter :: DAY = 3600.d0*24.d0, &
 !  -1 : strike-slip (left-lateral)
 !   2 : thrust
 !  -2 : Normal
-integer :: FAULT_TYPE = 0
+integer :: FAULT_TYPE = 1
 
 ! Which ODE solver to use:
 !   1 : Bulirsch-Stoer
 !   2 : Runge-Kutta-Fehlberg
-integer :: SOLVER_TYPE = 0
+integer :: SOLVER_TYPE = 2
 
 ! Input unit
 integer, parameter :: FID_IN = 15
