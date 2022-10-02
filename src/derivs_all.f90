@@ -181,7 +181,7 @@ end subroutine derivs_lsoda
 
 subroutine f_lsoda(neq, time, yt, dydt, pb)
   ! Yifan: Basically a copy of the derivs subroutine to accomodate lsoda iteration
-  ! The DLSODA is called one element by one element,
+  ! The DLSODA is called one element by one element, so no need to use pack and unpack
   use problem_class
   use friction, only : dtheta_dt_lsoda, dmu_dv_dtheta_lsoda
   
@@ -189,16 +189,18 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   integer, intent(in) :: neq
   double precision, intent(in) :: time, yt(neq)
   double precision, intent(out) :: dydt(neq)
+  double precision :: v, theta  ! Unpacking
   ! double precision :: dmu_dv, dmu_dtheta
   ! Yifan: these were transient values, but now I will save them in pb
-  double precision :: dtau_per !, sigma
+  double precision :: dtau_per, dtau_dP !, sigma
   
   ! storage conventions:
   ! v = yt(2::pb%neqs)
+  v = yt(2)
   ! theta = yt(1::pb%neqs)
+  theta = yt(1)
   ! dv/dt = dydt(2::pb%neqs)
   ! dtheta/dt = dydt(1::pb%neqs)
-  
   ! YD we may want to modify this part later to be able to
   ! impose more complicated loading/pertubation
   ! functions involved: problem_class/problem_type; input/read_main
@@ -207,13 +209,14 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   dtau_per = pb%Omper * pb%Aper * cos(pb%Omper*time)
   
   ! state evolution law, dtheta/dt = f(v,theta)
-  dydt(1) = dtheta_dt_lsoda(yt, pb)
+  call dtheta_dt_lsoda(dydt(1), yt, pb)
   
   ! Time derivative of the elastic equilibrium equation
   !  dtau_load/dt + dtau_elastostatic/dt -impedance*dv/dt = sigma*( dmu/dv*dv/dt + dmu/dtheta*dtheta/dt )
   ! Rearranged in the following form:
   !  dv/dt = ( dtau_load/dt + dtau_elastostatic/dt - sigma*dmu/dtheta*dtheta/dt )/( sigma*dmu/dv + impedance )
   call dmu_dv_dtheta_lsoda(pb%dmu_dv(pb%lsoda%i), pb%dmu_dtheta(pb%lsoda%i), yt, pb)
+
   dydt(2) = (dtau_per + pb%dtau_dt(pb%lsoda%i) - pb%sigma(pb%lsoda%i)*pb%dmu_dtheta(pb%lsoda%i)*dydt(1)) &
              / (pb%sigma(pb%lsoda%i)*pb%dmu_dv(pb%lsoda%i) + pb%zimpedance)
 end subroutine f_lsoda

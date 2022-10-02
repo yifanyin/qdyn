@@ -1648,11 +1648,14 @@ SUBROUTINE DINTDY (T, K, YH, NYH, DKY, IFLAG)
       IC = 1
       IF (K .EQ. 0) GO TO 15
       JJ1 = L - K
-      DO 10 JJ = JJ1,NQ
- 10     IC = IC*JJ
+      DO JJ = JJ1,NQ
+        IC = IC*JJ
+      ENDDO
  15   C = IC
-      DO 20 I = 1,N
- 20     DKY(I) = C*YH(I,L)
+
+      DO I = 1,N
+        DKY(I) = C*YH(I,L)
+      ENDDO
       IF (K .EQ. NQ) GO TO 55
       JB2 = NQ - K
       DO 50 JB = 1,JB2

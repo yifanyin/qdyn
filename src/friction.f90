@@ -159,12 +159,12 @@ subroutine dmu_dv_dtheta(dmu_dv,dmu_dtheta,v,theta,pb)
 end subroutine dmu_dv_dtheta
 
 ! Yifan: LSODA
-function dtheta_dt_lsoda(y, pb) result(dth_dt)
+subroutine dtheta_dt_lsoda(dth_dt, y, pb)
 
   type(problem_type), intent(in) :: pb
   double precision, intent(in) :: y(*)
-  double precision :: v, theta
-  double precision :: dth_dt, omega
+  double precision :: v, theta, omega
+  double precision, intent(out) :: dth_dt
 
   theta = y(1)
   v = y(2)
@@ -188,8 +188,7 @@ function dtheta_dt_lsoda(y, pb) result(dth_dt)
   case default
     stop 'dtheta_dt: unknown state evolution law type'
   end select
-
-end function dtheta_dt_lsoda
+end subroutine dtheta_dt_lsoda
 
 
 subroutine dmu_dv_dtheta_lsoda(dmu_dv, dmu_dtheta, y, pb)

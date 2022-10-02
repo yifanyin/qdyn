@@ -66,7 +66,7 @@ subroutine do_bsstep(pb)
   use ode_rk45_2, only: rkf45_d2
   ! Yifan: LSODA
   use ode_lsoda, only: DLSODA
-  use friction, only: get_Jac
+  use friction, only: get_Jac, friction_mu
   use fault_stress, only : compute_stress
   use my_mpi, only : is_MPI_parallel, min_allproc
 
@@ -76,7 +76,7 @@ subroutine do_bsstep(pb)
   type(problem_type), intent(inout) :: pb
 
   double precision, dimension(pb%neqs*pb%mesh%nn) :: yt, dydt, yt_scale
-  double precision, dimension(pb%neqs*pb%mesh%nn) :: yt_prev
+  double precision, dimension(pb%neqs*pb%mesh%nn) :: yt_prev, dtau_dP
   double precision, dimension(pb%mesh%nn) :: main_var
   integer :: ik, neqs
   ! Yifan: used for LSODA
@@ -164,21 +164,30 @@ subroutine do_bsstep(pb)
     pb%t_prev = pb%time
     pb%lsoda%t = pb%time
     t_test = pb%lsoda%t
-    yt_test = yt 
-    ! Put compute_stress here to have stress to be calculate as a whole because of
-    ! The kernel is compressed either through FFT or H-matrix and cannot be
-    ! wrapped in F used for LSODA.
+    yt_test = yt
+    ! LSODA calculate the integration of one node at a time. So we need to loop ourself
+    ! Put compute_stress here to have stress to be calculate as a whole before integration
+    ! The kernel is compressed either through FFT or H-matrix and cannot be wrapped in F
+    ! used for LSODA.
     call compute_stress(pb%dtau_dt, dydt(3::pb%neqs), pb%kernel, yt(2::pb%neqs)-pb%v_pl)
-    ! Because LSODA does not include stress calculation. We need to update
-    ! the stress manually here. Hopefully it's not too off.
     ! Here the calculation use the old velocity to update dtau_dt and dsigma_dt
-    ! Update sigma
-    pb%sigma = yt(3::pb%neqs) + dydt(3::pb%neqs)*pb%dt_did
+
+    ! Update sigma in yt and pb%sigma?
+    if (pb%features%stress_coupling == 1) then
+      ! pb%sigma = pb%sigma + dydt(3:nmax:pb%neqs)*pb%dt_did
+      yt(4::pb%neqs) = pb%sigma + dydt(3::pb%neqs)*pb%dt_did
+    endif
     !   There's a chance the sigma can be negative close to the surface. First
     !   try to set minus sigma to zero
     ! where (pb%sigma < 1000.0)
     !   pb%sigma = 1000.0
     ! end where
+ 
+    ! For thermal pressurisation, the partial derivative of tau to P is -mu
+    if (pb%features%tp == 1) then
+      dtau_dP = -friction_mu(main_var, yt(1::pb%neqs), pb)
+    endif
+
     ! Call DLSODA
     ! - First call perform one-step with ITASK = 5 with TCRIT as pb%t_max.
     !   pb%tmax is in pb%lsoda%rwork(1)
@@ -218,6 +227,7 @@ subroutine do_bsstep(pb)
     enddo
     pb%dt_did = TOUT - pb%t_prev
     pb%time = TOUT
+    yt(3::pb%neqs) = yt(3::pb%neqs) + yt(2::pb%neqs)*pb%dt_did
   else
     ! Unknown solver type
     write(FID_SCREEN, *) "Solver type", SOLVER_TYPE, "not recognised"
@@ -245,7 +255,7 @@ end subroutine do_bsstep
 
 !=====================================================================
 ! Update field: slip, tau, potency potency rate, crack,
-!
+
 subroutine update_field(pb)
 
   use friction, only : friction_mu, dtheta_dt

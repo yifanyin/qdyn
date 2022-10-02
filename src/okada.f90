@@ -187,9 +187,9 @@ end subroutine compute_kernel
 
 !-----                                                                  
 
-      DO 111  I=1,12                                                    
-
-  111 U(I)=F0                                                           
+      DO I=1,12                                                    
+        U(I)=F0
+      ENDDO
 
 !======================================                                 
 
@@ -223,10 +223,9 @@ end subroutine compute_kernel
 
         DU(12)= F3*X/R5*(-ALP1*D*CD +ALP2*(D*UZ-Q) )                    
 
-        DO 222 I=1,12                                                   
-
-  222   U(I)=U(I)+POT1/PI2*DU(I)                                        
-
+        DO I=1,12                                                   
+          U(I)=U(I)+POT1/PI2*DU(I)
+        ENDDO
       ENDIF                                                             
 
 !===================================                                    
@@ -299,10 +298,9 @@ end subroutine compute_kernel
 
         DU(12)= ALP1*(C2D/R3+F3*D*S/R5) -ALP2*(D*WZ-Q)*QR               
 
-        DO 444 I=1,12                                                   
-
-  444   U(I)=U(I)+POT3/PI2*DU(I)                                        
-
+        DO I=1,12                                                   
+          U(I)=U(I)+POT3/PI2*DU(I)
+        ENDDO
       ENDIF                                                             
 
 !=========================================                              
