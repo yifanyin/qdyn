@@ -24,8 +24,8 @@ class AuxiliaryFunctions:
 
         t_b = benchmark["t"]
         t_r = results["t"]
-        var1_int = interp1d(t_r, results["var1"])(t_b)
-        var2_int = interp1d(t_r, results["var2"])(t_b)
+        var1_int = interp1d(t_r, results["var1"], fill_value='extrapolate')(t_b)
+        var2_int = interp1d(t_r, results["var2"], fill_value='extrapolate')(t_b)
         
         b1_int = interp1d(t_b, benchmark["var1"])(t_b)
         b2_int = interp1d(t_b, benchmark["var2"])(t_b)

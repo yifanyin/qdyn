@@ -76,10 +76,10 @@ class TestSingleAsperity(AuxiliaryFunctions):
         set_dict["MU"] = 3e10
         set_dict["W"] = 50e3
         set_dict["SIGMA"] = 1e8
-        set_dict["ACC"] = 1e-10
+        # set_dict["ACC"] = 1e-10
         set_dict["DTTRY"] = 100
         set_dict["V_TH"] = 1e-2
-        set_dict["SOLVER"] = 1
+        set_dict["SOLVER"] = 4
 
         # Setting some RSF parameters
         set_dict["SET_DICT_RSF"]["A"] = 0.9e-2

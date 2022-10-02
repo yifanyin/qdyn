@@ -64,10 +64,10 @@ class TestTseRice(AuxiliaryFunctions):
         set_dict["V_PL"] = 35e-3 / t_yr
         set_dict["MU"] = 3e10
         set_dict["SIGMA"] = 1e8
-        set_dict["ACC"] = 1e-7
+        # set_dict["ACC"] = 1e-7
         set_dict["DTTRY"] = 100
         set_dict["V_TH"] = 1e-2
-        set_dict["SOLVER"] = 1
+        set_dict["SOLVER"] = 4
         set_dict["FRICTION_MODEL"] = "RSF"
 
         # Setting some RSF parameters

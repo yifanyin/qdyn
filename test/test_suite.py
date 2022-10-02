@@ -31,11 +31,11 @@ pass_check = True
 # General simulation parameters
 set_dict = {
     "FAULT_TYPE": 1,
-    "ACC": 1e-10,
-    "SOLVER": 2,
+    "ACC": 1e-5,
+    "SOLVER": 4,
     "MU": 3e10,
     "TMAX": 20,
-    "DTTRY": 1e-6,
+    "DTTRY": 1e-3,
     "MESHDIM": 0,
     "NTOUT": 10000,
     "VS": 3000,
@@ -110,14 +110,14 @@ p.settings(set_dict)
 vstep = TestVstep(p)
 vstep.import_results()
 vstep.run_test("RSF")
-vstep.run_test("CNS")
+# vstep.run_test("CNS")
 # vstep.export_results()
-# vstep.plot_results("RSF")
+vstep.plot_results("RSF")
 # vstep.plot_results("CNS")
 
-# Update check
+# # Update check
 pass_check = pass_check and vstep.test_results["RSF"]["success"]
-pass_check = pass_check and vstep.test_results["CNS"]["success"]
+# pass_check = pass_check and vstep.test_results["CNS"]["success"]
 
 # Spring-block stick-slip simulation (RSF and CNS)
 print(" - Testing spring-block (stick-slip)..")
@@ -125,14 +125,14 @@ p.settings(set_dict)
 stickslip = TestStickSlip(p)
 stickslip.import_results()
 stickslip.run_test("RSF")
-stickslip.run_test("CNS")
+# stickslip.run_test("CNS")
 # stickslip.export_results()
-# stickslip.plot_results("RSF")
+stickslip.plot_results("RSF")
 # stickslip.plot_results("CNS")
 
 # Update check
 pass_check = pass_check and stickslip.test_results["RSF"]["success"]
-pass_check = pass_check and stickslip.test_results["CNS"]["success"]
+# pass_check = pass_check and stickslip.test_results["CNS"]["success"]
 
 # 2D fault single asperity simulation (RSF)
 print(" - Testing single asperity (will take a few minutes)...")
@@ -140,14 +140,15 @@ p.settings(set_dict)
 single_asperity = TestSingleAsperity(p)
 single_asperity.import_results()
 single_asperity.run_test("RSF")
-single_asperity.run_test("CNS")
-# single_asperity.export_results()
+# single_asperity.run_test("CNS")
+single_asperity.export_results()
 # Plot results
 # single_asperity.plot_results("CNS")
+single_asperity.plot_results("RSF")
 
 # Update check
 pass_check = pass_check and single_asperity.test_results["RSF"]["success"]
-pass_check = pass_check and single_asperity.test_results["CNS"]["success"]
+# pass_check = pass_check and single_asperity.test_results["CNS"]["success"]
 
 # Tse & Rice (1986) example test (RSF)
 # see https://doi.org/10.1029/JB091iB09p09452
@@ -158,7 +159,7 @@ tse_rice.import_results()
 tse_rice.run_test()
 # tse_rice.export_results()
 # Plot results
-# tse_rice.plot_results("RSF")
+tse_rice.plot_results("RSF")
 
 # Update check
 pass_check = pass_check and tse_rice.test_results["RSF"]["success"]
