@@ -25,7 +25,7 @@ contains
 subroutine derivs(time,yt,dydt,pb)
 
   use fault_stress, only : compute_stress
-  use friction, only : dtheta_dt, RSF_derivs, compute_velocity_RSF
+  use friction, only : dtheta_dt, RSF_derivs, RSF_derivs_lsoda, compute_velocity_RSF
   use friction_cns, only : compute_velocity, CNS_derivs
   use diffusion_solver, only : update_PT
   use utils, only : pack, unpack
@@ -96,7 +96,6 @@ subroutine derivs(time,yt,dydt,pb)
     ! velocity is stored in yt(2::pb%neqs), and tau is not used (set to zero)
     tau = main_var
     v = compute_velocity_RSF(tau, sigma, theta, pb)
-
     call RSF_derivs(dV_dtau, dV_dtheta, dV_dsigma, v, theta, tau, sigma, pb)
     ! SEISMIC: calculate time-derivative of state variable (theta)
     call dtheta_dt(v, theta, dth_dt, pb)
@@ -155,21 +154,21 @@ subroutine derivs_rk45(time, yt, dydt)
 
 end subroutine derivs_rk45
 
-subroutine derivs_lsoda(neq, time, y, dydt)
+subroutine derivs_lsoda(neq, time, v, theta, dydt)
   ! Yifan: The wrapper function for calling the DLSODA
   integer, intent(in) :: neq
   double precision, intent(in) :: time
   double precision :: y(*), dydt(*)
   
-  call f_lsoda(neq, time, y, dydt, odepb)
+  call f_lsoda(neq, time, v, theta, dydt, odepb)
 
 end subroutine derivs_lsoda
 
-subroutine f_lsoda(neq, time, yt, dydt, pb)
+subroutine f_lsoda(neq, time, v, theta, dydt, pb)
   ! Yifan: Basically a copy of the derivs subroutine to accomodate lsoda iteration
   ! The DLSODA is called one element by one element, so no need to use pack and unpack
   use problem_class
-  use friction, only : dtheta_dt_lsoda, dmu_dv_dtheta_lsoda
+  use friction, only : dtheta_dt_lsoda, RSF_derivs_lsoda
   
   type(problem_type), intent(inout) :: pb
   integer, intent(in) :: neq
@@ -182,9 +181,9 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   
   ! storage conventions:
   ! v = yt(2::pb%neqs)
-  v = yt(2)
+  !! v = yt(2)
   ! theta = yt(1::pb%neqs)
-  theta = yt(1)
+  !!theta = yt(1)
   ! dv/dt = dydt(2::pb%neqs)
   ! dtheta/dt = dydt(1::pb%neqs)
   ! YD we may want to modify this part later to be able to
@@ -195,16 +194,17 @@ subroutine f_lsoda(neq, time, yt, dydt, pb)
   dtau_per = pb%Omper * pb%Aper * cos(pb%Omper*time)
   
   ! state evolution law, dtheta/dt = f(v,theta)
-  call dtheta_dt_lsoda(dydt(1), yt, pb)
+  call dtheta_dt_lsoda(dydt(1), v, theta, pb)
   
   ! Time derivative of the elastic equilibrium equation
   !  dtau_load/dt + dtau_elastostatic/dt -impedance*dv/dt = sigma*( dmu/dv*dv/dt + dmu/dtheta*dtheta/dt )
   ! Rearranged in the following form:
   !  dv/dt = ( dtau_load/dt + dtau_elastostatic/dt - sigma*dmu/dtheta*dtheta/dt )/( sigma*dmu/dv + impedance )
-  call dmu_dv_dtheta_lsoda(pb%dmu_dv(pb%lsoda%i), pb%dmu_dtheta(pb%lsoda%i), yt, pb)
+  call RSF_derivs_lsoda(pb%dmu_dv(pb%lsoda%i), pb%dmu_dtheta(pb%lsoda%i), yt, pb)
 
   dydt(2) = (dtau_per + pb%dtau_dt(pb%lsoda%i) - pb%sigma(pb%lsoda%i)*pb%dmu_dtheta(pb%lsoda%i)*dydt(1)) &
              / (pb%sigma(pb%lsoda%i)*pb%dmu_dv(pb%lsoda%i) + pb%zimpedance)
+
 end subroutine f_lsoda
 
 end module derivs_all
