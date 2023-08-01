@@ -517,7 +517,7 @@ end subroutine compute_stress
 subroutine compute_stress_1d(tau,k1,v)
 
   double precision , intent(out) :: tau(1)
-  double precision , intent(in) :: k1,v(1)
+  double precision , intent(in) :: k1, v(1)
 
   tau =  - k1*v
 

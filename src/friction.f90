@@ -190,7 +190,6 @@ subroutine dtheta_dt_lsoda(dth_dt, y, pb)
   end select
 end subroutine dtheta_dt_lsoda
 
-
 subroutine dmu_dv_dtheta_lsoda(dmu_dv, dmu_dtheta, y, pb)
 
   type(problem_type), intent(in) :: pb
