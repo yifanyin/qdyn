@@ -164,7 +164,7 @@ subroutine dtheta_dt_lsoda(v, theta, dth_dt, pb)
   type(problem_type), intent(in) :: pb
   !double precision, intent(in) :: y(*)
   double precision, intent(in) :: v, theta
-  double precision, :: dth_dt, omega
+  double precision :: dth_dt, omega
 
   ! Have been covered by unpacking
   ! theta = y(1)
@@ -192,7 +192,7 @@ subroutine dtheta_dt_lsoda(v, theta, dth_dt, pb)
 end subroutine dtheta_dt_lsoda
 
 !-------------------------------------------------------------------------
-subroutine RSF_derivs_lsoda(dV_dtau, dV_dtheta, dV_dsigma, v, theta, pb)
+subroutine RSF_derivs_lsoda(dV_dtau, dV_dtheta, dV_dsigma, v, theta, tau, sigma, pb)
 
   type(problem_type), intent(in) :: pb
   double precision, dimension(pb%mesh%nn), intent(in) :: v, theta, tau, sigma
